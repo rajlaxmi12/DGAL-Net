@@ -88,7 +88,7 @@ class Trainer:
         # Metrics
         # --------------------------------------------------
 
-        self.metrics = ImageMetrics()
+        self.metrics = ImageMetrics(self.device)
 
         # --------------------------------------------------
         # Best Validation Loss

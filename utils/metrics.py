@@ -22,15 +22,17 @@ class ImageMetrics:
         - SSIM
     """
 
-    def __init__(self):
+    class ImageMetrics:
+
+    def __init__(self, device):
 
         self.psnr = PeakSignalNoiseRatio(
             data_range=1.0
-        )
+        ).to(device)
 
         self.ssim = StructuralSimilarityIndexMeasure(
             data_range=1.0
-        )
+        ).to(device)
 
     @torch.no_grad()
     def compute(self, prediction, target):

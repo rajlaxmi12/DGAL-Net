@@ -12,7 +12,7 @@ class Config:
     # Dataset
     # --------------------------------------------------------
 
-    DATA_ROOT = "./data"
+    DATA_ROOT = "/content/drive/MyDrive/data"
 
     LOL_TRAIN = os.path.join(DATA_ROOT, "LOL/train")
     # Use the official LOL test set as validation for now
