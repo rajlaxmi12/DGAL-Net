@@ -1,1 +1,1 @@
-self.metrics = ImageMetrics(self.device)
+from .trainer import Trainer

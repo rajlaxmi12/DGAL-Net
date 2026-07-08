@@ -6,18 +6,20 @@
 import os
 import torch
 
+
 class Config:
 
     # --------------------------------------------------------
     # Dataset
     # --------------------------------------------------------
 
-    DATA_ROOT = "/content/drive/MyDrive/data"
+    # Windows Dataset Path
+    DATA_ROOT = r"D:\DGAL-Net\data"
 
-    LOL_TRAIN = os.path.join(DATA_ROOT, "LOL/train")
-    # Use the official LOL test set as validation for now
-    LOL_VAL = os.path.join(DATA_ROOT, "LOL/test")
+    LOL_TRAIN = os.path.join(DATA_ROOT, "LOL", "train")
+    LOL_VAL = os.path.join(DATA_ROOT, "LOL", "test")
 
+    # Optional datasets (if available)
     LOLV2 = os.path.join(DATA_ROOT, "LOL-v2")
     EXDARK = os.path.join(DATA_ROOT, "ExDark")
     LSRW = os.path.join(DATA_ROOT, "LSRW")
@@ -27,16 +29,17 @@ class Config:
     # --------------------------------------------------------
 
     IMAGE_SIZE = 256
-
     CHANNELS = 3
 
     # --------------------------------------------------------
     # Training
     # --------------------------------------------------------
 
+    # Keep 2 only for testing.
+    # After confirming training works, change to 100.
     EPOCHS = 2
 
-    BATCH_SIZE = 4      # CPU Friendly
+    BATCH_SIZE = 4
 
     NUM_WORKERS = 0
 
@@ -99,5 +102,6 @@ class Config:
     # --------------------------------------------------------
 
     SEED = 42
+
 
 config = Config()
