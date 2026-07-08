@@ -37,7 +37,7 @@ class Config:
 
     # Keep 2 only for testing.
     # After confirming training works, change to 100.
-    EPOCHS = 2
+    EPOCHS = 100
 
     BATCH_SIZE = 4
 
