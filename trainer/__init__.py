@@ -1,0 +1,1 @@
+self.metrics = ImageMetrics(self.device)

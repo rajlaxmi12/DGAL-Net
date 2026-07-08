@@ -22,9 +22,9 @@ class ImageMetrics:
         - SSIM
     """
 
-    class ImageMetrics:
-
     def __init__(self, device):
+
+        self.device = device
 
         self.psnr = PeakSignalNoiseRatio(
             data_range=1.0
@@ -37,9 +37,8 @@ class ImageMetrics:
     @torch.no_grad()
     def compute(self, prediction, target):
 
-        prediction = prediction.clamp(0, 1)
-
-        target = target.clamp(0, 1)
+        prediction = prediction.clamp(0, 1).to(self.device)
+        target = target.clamp(0, 1).to(self.device)
 
         psnr = self.psnr(
             prediction,
@@ -52,9 +51,6 @@ class ImageMetrics:
         )
 
         return {
-
             "psnr": psnr.item(),
-
             "ssim": ssim.item(),
-
         }
