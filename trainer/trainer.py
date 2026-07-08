@@ -11,7 +11,10 @@ import torch
 from trainer.optimizer import build_optimizer
 from trainer.scheduler import build_scheduler
 
-from utils.checkpoint import save_checkpoint
+from utils.checkpoint import (
+    save_checkpoint,
+    load_checkpoint,
+)
 
 from losses.total_loss import TotalLoss
 
@@ -95,6 +98,38 @@ class Trainer:
         # --------------------------------------------------
 
         self.best_loss = float("inf")
+
+        # --------------------------------------------------
+        # Resume Training
+        # --------------------------------------------------
+
+        self.start_epoch = 1
+
+        latest_checkpoint = "checkpoints/latest_checkpoint.pth"
+
+        if os.path.exists(latest_checkpoint):
+
+            print()
+            print("=" * 60)
+            print("Found previous checkpoint.")
+            print("Resuming training...")
+            print("=" * 60)
+
+            checkpoint = load_checkpoint(
+                filepath=latest_checkpoint,
+                model=self.model,
+                optimizer=self.optimizer,
+                scheduler=self.scheduler,
+                device=self.device,
+            )
+
+            self.start_epoch = checkpoint["epoch"] + 1
+
+            self.best_loss = checkpoint["loss"]
+
+            print(f"Resume Epoch : {self.start_epoch}")
+            print(f"Best Loss    : {self.best_loss:.6f}")
+            print("=" * 60)
 
         print("=" * 60)
         print("DGAL-Net Trainer Initialized")
@@ -311,14 +346,14 @@ class Trainer:
     # Full Training Loop
     # ======================================================
 
-    def fit(self, epochs):
+    def fit(self, epochs, start_epoch=1):
 
         print()
         print("Starting Training...")
 
-        for epoch in range(1, epochs + 1):
+        for epoch in range(start_epoch, epochs + 1):
 
-            train_loss, val_loss = self.fit_one_epoch(
+            self.fit_one_epoch(
                 epoch=epoch,
                 total_epochs=epochs,
             )

@@ -5,6 +5,7 @@ Training Script
 ==========================================================
 """
 
+import os
 import random
 import numpy as np
 import torch
@@ -19,6 +20,8 @@ from datasets.dataloader import (
 from models.baseline.baseline_net import BaselineNet
 
 from trainer.trainer import Trainer
+
+from utils.checkpoint import load_checkpoint
 
 
 def set_seed(seed):
@@ -39,15 +42,15 @@ def main():
     print("Baseline Training")
     print("=" * 60)
 
-    # ------------------------------------------
+    # --------------------------------------------------
     # Seed
-    # ------------------------------------------
+    # --------------------------------------------------
 
     set_seed(config.SEED)
 
-    # ------------------------------------------
-    # Data
-    # ------------------------------------------
+    # --------------------------------------------------
+    # Dataset
+    # --------------------------------------------------
 
     print("\nLoading Dataset...")
 
@@ -56,12 +59,11 @@ def main():
     val_loader = get_val_loader()
 
     print("Train Batches :", len(train_loader))
-
     print("Validation Batches :", len(val_loader))
 
-    # ------------------------------------------
+    # --------------------------------------------------
     # Model
-    # ------------------------------------------
+    # --------------------------------------------------
 
     print("\nBuilding Network...")
 
@@ -79,33 +81,54 @@ def main():
     )
 
     print(f"Total Parameters     : {total_params:,}")
-
     print(f"Trainable Parameters : {trainable_params:,}")
 
-    # ------------------------------------------
+    # --------------------------------------------------
     # Trainer
-    # ------------------------------------------
+    # --------------------------------------------------
 
     trainer = Trainer(
-
         model=model,
-
         train_loader=train_loader,
-
         val_loader=val_loader,
-
         device=config.DEVICE,
-
         lr=config.LR,
-
     )
 
-    # ------------------------------------------
+    # --------------------------------------------------
+    # Resume Training
+    # --------------------------------------------------
+
+    start_epoch = 1
+
+    checkpoint_path = "checkpoints/latest_checkpoint.pth"
+
+    if os.path.exists(checkpoint_path):
+
+        print("\nFound previous checkpoint.")
+
+        start_epoch = load_checkpoint(
+            filepath=checkpoint_path,
+            model=trainer.model,
+            optimizer=trainer.optimizer,
+            scheduler=trainer.scheduler,
+            device=config.DEVICE,
+        ) + 1
+
+        print(f"Resuming Training from Epoch {start_epoch}")
+
+    else:
+
+        print("\nNo checkpoint found.")
+        print("Starting Fresh Training.")
+
+    # --------------------------------------------------
     # Training
-    # ------------------------------------------
+    # --------------------------------------------------
 
     trainer.fit(
-        epochs=config.EPOCHS
+        epochs=config.EPOCHS,
+        start_epoch=start_epoch,
     )
 
 
