@@ -14,11 +14,11 @@ class Config:
     # --------------------------------------------------------
 
     # Windows Dataset Path
-    DATA_ROOT = r"D:\DGAL-Net\data"
+    DATA_ROOT = "/kaggle/input/datasets/soumikrakshit/lol-dataset/lol_dataset"
 
-    LOL_TRAIN = os.path.join(DATA_ROOT, "LOL", "train")
-    LOL_VAL = os.path.join(DATA_ROOT, "LOL", "test")
-
+    LOL_TRAIN = os.path.join(DATA_ROOT, "our485")
+    LOL_VAL = os.path.join(DATA_ROOT, "eval15")
+    
     # Optional datasets (if available)
     LOLV2 = os.path.join(DATA_ROOT, "LOL-v2")
     EXDARK = os.path.join(DATA_ROOT, "ExDark")
