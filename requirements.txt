@@ -1,0 +1,12 @@
+torch
+torchvision
+opencv-python
+albumentations
+numpy
+matplotlib
+lpips
+scikit-image
+tqdm
+tensorboard
+PyYAML
+thop
