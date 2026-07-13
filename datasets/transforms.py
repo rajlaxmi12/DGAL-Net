@@ -4,15 +4,24 @@ DGAL-Net v2
 Image Transformations
 ==========================================================
 
+Deterministic preprocessing for paired low-light image
+enhancement.
+
+Since the LOL dataset is a paired dataset, identical
+pixel correspondence between the low-light image and
+ground-truth image must be preserved.
+
+Therefore, only deterministic transformations are applied.
+
 Training:
     • Resize
-    • Random Horizontal Flip
-    • Random Vertical Flip
-    • Random Rotation
-    • Color Jitter
     • ToTensor
 
-Validation/Test:
+Validation:
+    • Resize
+    • ToTensor
+
+Testing:
     • Resize
     • ToTensor
 ==========================================================
@@ -22,54 +31,19 @@ from torchvision import transforms
 
 
 class DGALTransforms:
+    """
+    Deterministic preprocessing for paired image restoration.
+    """
 
     def __init__(self, image_size=128):
 
         self.image_size = image_size
 
         # --------------------------------------------------
-        # Training Transform
+        # Common Transform
         # --------------------------------------------------
 
-        self.train_transform = transforms.Compose([
-
-            transforms.Resize(
-                (image_size, image_size)
-            ),
-
-            transforms.RandomHorizontalFlip(
-                p=0.5
-            ),
-
-            transforms.RandomVerticalFlip(
-                p=0.5
-            ),
-
-            transforms.RandomRotation(
-                degrees=10
-            ),
-
-            transforms.ColorJitter(
-
-                brightness=0.15,
-
-                contrast=0.15,
-
-                saturation=0.05,
-
-                hue=0.02,
-
-            ),
-
-            transforms.ToTensor(),
-
-        ])
-
-        # --------------------------------------------------
-        # Validation Transform
-        # --------------------------------------------------
-
-        self.val_transform = transforms.Compose([
+        common_transform = transforms.Compose([
 
             transforms.Resize(
                 (image_size, image_size)
@@ -80,18 +54,22 @@ class DGALTransforms:
         ])
 
         # --------------------------------------------------
-        # Test Transform
+        # Train
         # --------------------------------------------------
 
-        self.test_transform = transforms.Compose([
+        self.train_transform = common_transform
 
-            transforms.Resize(
-                (image_size, image_size)
-            ),
+        # --------------------------------------------------
+        # Validation
+        # --------------------------------------------------
 
-            transforms.ToTensor(),
+        self.val_transform = common_transform
 
-        ])
+        # --------------------------------------------------
+        # Test
+        # --------------------------------------------------
+
+        self.test_transform = common_transform
 
     def get_train_transform(self):
         return self.train_transform
