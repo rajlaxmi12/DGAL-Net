@@ -1,34 +1,54 @@
 """
 ==========================================================
-DGAL-Net
+DGAL-Net v2
 Learning Rate Scheduler
+==========================================================
+
+Uses Cosine Annealing Learning Rate Scheduler for
+smooth optimization.
+
+Advantages
+----------
+• Smooth learning rate decay
+• Better convergence
+• Improved training stability
 ==========================================================
 """
 
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 
 def build_scheduler(
     optimizer,
-    step_size=20,
-    gamma=0.5,
+    epochs=100,
+    eta_min=1e-6,
 ):
     """
-    StepLR scheduler used in the baseline paper.
+    Build Cosine Annealing LR Scheduler.
 
-    Args:
-        optimizer : Optimizer
-        step_size : Decay every N epochs
-        gamma     : LR decay factor
+    Parameters
+    ----------
+    optimizer : torch.optim.Optimizer
 
-    Returns:
-        scheduler
+    epochs : int
+        Total training epochs
+
+    eta_min : float
+        Minimum learning rate
+
+    Returns
+    -------
+    scheduler
     """
 
-    scheduler = StepLR(
+    scheduler = CosineAnnealingLR(
+
         optimizer,
-        step_size=step_size,
-        gamma=gamma,
+
+        T_max=epochs,
+
+        eta_min=eta_min,
+
     )
 
     return scheduler
