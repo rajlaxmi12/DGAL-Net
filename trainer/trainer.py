@@ -157,7 +157,7 @@ class Trainer:
     # Train One Epoch
     # ======================================================
     
-        def train_one_epoch(self):
+    def train_one_epoch(self):
     
         self.model.train()
     
