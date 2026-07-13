@@ -1,36 +1,39 @@
 """
 ==========================================================
-DGAL-Net
+DGAL-Net v2
 Difficulty Guided Adaptive Low-Light Enhancement Network
 ==========================================================
 
-Architecture
+Pipeline
 
-Input
-   │
-   ▼
+Input Image
+      │
+      ▼
 Encoder
-   │
-   ▼
-Difficulty Estimator
-   │
-   ├──────────────► Difficulty Score
-   │
-   ▼
-Feature Modulation
-   │
-   ▼
+      │
+      ▼
+Spatial Difficulty Estimation Module (SDEM)
+      │
+      ├──────────────► Difficulty Score
+      │
+      ▼
+Residual Difficulty Guided Feature Modulation (RDFM)
+      │
+      ▼
 Bottleneck
-   │
-   ▼
+(AdaIN + Residual Blocks)
+      │
+      ▼
 Decoder
-   │
-   ▼
+      │
+      ▼
 Enhanced Image
 
-Returns:
-    enhanced_image
-    difficulty_score
+Returns
+-------
+enhanced_image
+difficulty_score
+==========================================================
 """
 
 import torch.nn as nn
@@ -45,49 +48,38 @@ from models.dgal.feature_modulation import FeatureModulation
 
 class DGALNet(nn.Module):
     """
-    DGAL-Net
+    DGAL-Net v2
 
-    Novel LLIE Architecture.
-
-    Returns
-
-        enhanced_image
-
-        difficulty_score
+    Difficulty Guided Adaptive Low-Light Enhancement Network
     """
 
     def __init__(self):
-
         super().__init__()
 
-        # -----------------------------------------
+        # ------------------------------------------
         # Feature Extraction
-        # -----------------------------------------
-
+        # ------------------------------------------
         self.encoder = Encoder()
 
-        # -----------------------------------------
-        # Difficulty Estimation Module
-        # -----------------------------------------
-
+        # ------------------------------------------
+        # Spatial Difficulty Estimation
+        # ------------------------------------------
         self.difficulty_estimator = DifficultyEstimator()
 
-        # -----------------------------------------
-        # Feature Modulation Module
-        # -----------------------------------------
-
+        # ------------------------------------------
+        # Difficulty Guided Feature Modulation
+        # ------------------------------------------
         self.feature_modulation = FeatureModulation()
 
-        # -----------------------------------------
+        # ------------------------------------------
         # Bottleneck
-        # -----------------------------------------
-
+        # AdaIN + Residual Blocks
+        # ------------------------------------------
         self.bottleneck = Bottleneck()
 
-        # -----------------------------------------
+        # ------------------------------------------
         # Decoder
-        # -----------------------------------------
-
+        # ------------------------------------------
         self.decoder = Decoder()
 
     def forward(
@@ -95,45 +87,37 @@ class DGALNet(nn.Module):
         x,
         style_feature=None,
     ):
-
-        # -----------------------------------------
-        # Encoder
-        # -----------------------------------------
-
+        # ------------------------------------------
+        # Feature Extraction
+        # ------------------------------------------
         feature = self.encoder(x)
 
-        # -----------------------------------------
-        # Difficulty Prediction
-        # -----------------------------------------
-
-        difficulty = self.difficulty_estimator(
+        # ------------------------------------------
+        # Predict Enhancement Difficulty
+        # ------------------------------------------
+        difficulty_score = self.difficulty_estimator(
             feature
         )
 
-        # -----------------------------------------
-        # Feature Modulation
-        # -----------------------------------------
-
+        # ------------------------------------------
+        # Adaptive Feature Modulation
+        # ------------------------------------------
         feature = self.feature_modulation(
             feature,
-            difficulty,
+            difficulty_score,
         )
 
-        # -----------------------------------------
+        # ------------------------------------------
         # Bottleneck
-        # -----------------------------------------
-
+        # ------------------------------------------
         feature = self.bottleneck(
             feature,
             style_feature,
         )
 
-        # -----------------------------------------
-        # Decoder
-        # -----------------------------------------
+        # ------------------------------------------
+        # Image Reconstruction
+        # ------------------------------------------
+        output = self.decoder(feature)
 
-        output = self.decoder(
-            feature
-        )
-
-        return output, difficulty
+        return output, difficulty_score
