@@ -1,21 +1,24 @@
 """
 ==========================================================
-DGAL-Net
-Difficulty Estimation Module (DEM)
+DGAL-Net v2
+Spatial Difficulty Estimation Module (SDEM)
+==========================================================
 
-Novel Component
+This module estimates the overall enhancement difficulty
+from encoder feature maps.
 
-This module predicts a learnable image difficulty score
-from encoder features.
+Instead of directly applying Global Average Pooling,
+the network first analyzes spatial feature complexity
+using lightweight convolutional layers.
 
 Input:
-    Feature Map : (B, 256, H, W)
+    Feature Map : (B,256,H,W)
 
 Output:
-    Difficulty Score : (B, 1)
+    Difficulty Score : (B,1)
 
 Range:
-    [0, 1]
+    [0,1]
 ==========================================================
 """
 
@@ -25,22 +28,38 @@ import torch.nn as nn
 
 class DifficultyEstimator(nn.Module):
     """
-    Difficulty Estimation Module (DEM)
+    Spatial Difficulty Estimation Module (SDEM)
 
-    Pipeline:
-        Feature Map
-            ↓
-        Global Average Pooling
-            ↓
-        FC (256 → 64)
-            ↓
-        ReLU
-            ↓
-        FC (64 → 1)
-            ↓
-        Sigmoid
-            ↓
-        Difficulty Score
+    Feature Map
+        │
+        ▼
+    Conv3×3
+        │
+    GroupNorm
+        │
+      ReLU
+        │
+    Conv3×3
+        │
+    GroupNorm
+        │
+      ReLU
+        │
+    Global Average Pooling
+        │
+        ▼
+    FC (256→64)
+        │
+      ReLU
+        │
+    Dropout
+        │
+    FC (64→1)
+        │
+    Sigmoid
+        │
+        ▼
+    Difficulty Score
     """
 
     def __init__(
@@ -51,10 +70,44 @@ class DifficultyEstimator(nn.Module):
         super().__init__()
 
         # ------------------------------------------
-        # Global Average Pooling
+        # Spatial Difficulty Feature Extraction
         # ------------------------------------------
 
-        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.feature_refinement = nn.Sequential(
+
+            nn.Conv2d(
+                in_channels,
+                in_channels,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+            ),
+
+            nn.GroupNorm(32, in_channels),
+
+            nn.ReLU(inplace=True),
+
+            nn.Conv2d(
+                in_channels,
+                in_channels,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+                bias=False,
+            ),
+
+            nn.GroupNorm(32, in_channels),
+
+            nn.ReLU(inplace=True),
+
+        )
+
+        # ------------------------------------------
+        # Global Pooling
+        # ------------------------------------------
+
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
 
         # ------------------------------------------
         # Difficulty Prediction Head
@@ -69,6 +122,8 @@ class DifficultyEstimator(nn.Module):
 
             nn.ReLU(inplace=True),
 
+            nn.Dropout(0.2),
+
             nn.Linear(
                 hidden_dim,
                 1,
@@ -80,26 +135,38 @@ class DifficultyEstimator(nn.Module):
 
     def forward(self, feature):
         """
-        Args:
-            feature : (B,256,H,W)
+        Args
+        ----
+        feature : Tensor
+            Shape : (B,256,H,W)
 
-        Returns:
-            difficulty : (B,1)
+        Returns
+        -------
+        difficulty : Tensor
+            Shape : (B,1)
         """
+
+        # ------------------------------------------
+        # Spatial Feature Analysis
+        # ------------------------------------------
+
+        feature = self.feature_refinement(feature)
 
         # ------------------------------------------
         # Global Feature Vector
         # ------------------------------------------
 
-        x = self.global_pool(feature)
+        pooled = self.global_pool(feature)
 
-        # (B,256,1,1) -> (B,256)
-        x = torch.flatten(x, start_dim=1)
+        pooled = torch.flatten(
+            pooled,
+            start_dim=1,
+        )
 
         # ------------------------------------------
         # Difficulty Prediction
         # ------------------------------------------
 
-        difficulty = self.fc(x)
+        difficulty = self.fc(pooled)
 
         return difficulty
