@@ -1,38 +1,27 @@
 """
 ==========================================================
-DGAL-Net
-Total Loss
+DGAL-Net v2
+Adaptive Multi-Objective Total Loss
 ==========================================================
 
-Total Loss for DGAL-Net
-
-Baseline:
-    Total = L1 + λ * Perceptual
-
-DGAL-Net:
-    Difficulty
-          │
-          ▼
-    Adaptive Loss
-          │
-          ▼
-Dynamic Weights
-          │
-          ▼
-L1 + Perceptual
+L_total =
+L_charbonnier
++ λ1 L_perceptual
++ λ2 L_gradient
++ λ3 L_color
+==========================================================
 """
 
 import torch.nn as nn
 
-from losses.l1_loss import L1Loss
+from losses.charbonnier_loss import CharbonnierLoss
 from losses.perceptual_loss import PerceptualLoss
+from losses.gradient_loss import GradientLoss
+from losses.color_loss import ColorLoss
 from losses.adaptive_loss import AdaptiveLoss
 
 
 class TotalLoss(nn.Module):
-    """
-    Total Loss for DGAL-Net.
-    """
 
     def __init__(self):
         super().__init__()
@@ -41,9 +30,13 @@ class TotalLoss(nn.Module):
         # Individual Losses
         # -----------------------------------------
 
-        self.l1_loss = L1Loss()
+        self.charbonnier_loss = CharbonnierLoss()
 
         self.perceptual_loss = PerceptualLoss()
+
+        self.gradient_loss = GradientLoss()
+
+        self.color_loss = ColorLoss()
 
         # -----------------------------------------
         # Adaptive Weight Generator
@@ -57,26 +50,12 @@ class TotalLoss(nn.Module):
         target,
         difficulty=None,
     ):
-        """
-        Parameters
-        ----------
-        prediction : Tensor
-
-        target : Tensor
-
-        difficulty : Tensor or None
-            Shape (B,1)
-
-        Returns
-        -------
-        dict
-        """
 
         # -----------------------------------------
         # Compute Individual Losses
         # -----------------------------------------
 
-        l1 = self.l1_loss(
+        charbonnier = self.charbonnier_loss(
             prediction,
             target,
         )
@@ -86,15 +65,26 @@ class TotalLoss(nn.Module):
             target,
         )
 
+        gradient = self.gradient_loss(
+            prediction,
+            target,
+        )
+
+        color = self.color_loss(
+            prediction,
+            target,
+        )
+
         # -----------------------------------------
-        # Baseline Weights
+        # Adaptive Weights
         # -----------------------------------------
 
         if difficulty is None:
 
-            l1_weight = 1.0
-
-            perceptual_weight = 0.2
+            charbonnier_weight = 1.0
+            perceptual_weight = 0.20
+            gradient_weight = 0.05
+            color_weight = 0.03
 
         else:
 
@@ -102,9 +92,13 @@ class TotalLoss(nn.Module):
                 difficulty
             )
 
-            l1_weight = weights["l1"]
+            charbonnier_weight = weights["charbonnier"]
 
             perceptual_weight = weights["perceptual"]
+
+            gradient_weight = weights["gradient"]
+
+            color_weight = weights["color"]
 
         # -----------------------------------------
         # Total Loss
@@ -112,11 +106,19 @@ class TotalLoss(nn.Module):
 
         total_loss = (
 
-            l1_weight * l1
+            charbonnier_weight * charbonnier
 
             +
 
             perceptual_weight * perceptual
+
+            +
+
+            gradient_weight * gradient
+
+            +
+
+            color_weight * color
 
         )
 
@@ -124,12 +126,20 @@ class TotalLoss(nn.Module):
 
             "total_loss": total_loss,
 
-            "l1_loss": l1,
+            "charbonnier_loss": charbonnier,
 
             "perceptual_loss": perceptual,
 
-            "l1_weight": l1_weight,
+            "gradient_loss": gradient,
+
+            "color_loss": color,
+
+            "charbonnier_weight": charbonnier_weight,
 
             "perceptual_weight": perceptual_weight,
+
+            "gradient_weight": gradient_weight,
+
+            "color_weight": color_weight,
 
         }
