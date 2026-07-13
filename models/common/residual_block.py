@@ -1,7 +1,16 @@
 """
 ==========================================================
-DGAL-Net
+DGAL-Net v2
 Residual Block
+==========================================================
+
+Residual Block with
+
+• Group Normalization
+• Residual Scaling
+
+This improves optimization stability for lightweight
+low-light image enhancement networks.
 ==========================================================
 """
 
@@ -12,21 +21,32 @@ from models.common.conv_block import ConvBlock
 
 class ResidualBlock(nn.Module):
     """
-    Standard ResNet-style Residual Block
+    Residual Block
 
-    Conv-BN-ReLU
-        ↓
-    Conv-BN
-        ↓
-    Skip Connection
-        ↓
-    ReLU
+    Conv → GN → ReLU
+            ↓
+       Conv → GN
+            ↓
+      Residual Scaling
+            ↓
+       Skip Connection
+            ↓
+          ReLU
     """
 
-    def __init__(self, channels):
+    def __init__(
+        self,
+        channels,
+        residual_scale=0.2,
+    ):
         super().__init__()
 
-        # First convolution
+        self.residual_scale = residual_scale
+
+        # ------------------------------------------
+        # First Convolution
+        # ------------------------------------------
+
         self.conv1 = ConvBlock(
             in_channels=channels,
             out_channels=channels,
@@ -35,8 +55,12 @@ class ResidualBlock(nn.Module):
             padding=1,
         )
 
-        # Second convolution (NO ReLU after this)
+        # ------------------------------------------
+        # Second Convolution
+        # ------------------------------------------
+
         self.conv2 = nn.Sequential(
+
             nn.Conv2d(
                 in_channels=channels,
                 out_channels=channels,
@@ -45,7 +69,12 @@ class ResidualBlock(nn.Module):
                 padding=1,
                 bias=False,
             ),
-            nn.BatchNorm2d(channels),
+
+            nn.GroupNorm(
+                num_groups=32,
+                num_channels=channels,
+            ),
+
         )
 
         self.relu = nn.ReLU(inplace=True)
@@ -58,7 +87,11 @@ class ResidualBlock(nn.Module):
 
         out = self.conv2(out)
 
-        out = out + identity
+        # ------------------------------------------
+        # Residual Scaling
+        # ------------------------------------------
+
+        out = identity + self.residual_scale * out
 
         out = self.relu(out)
 
