@@ -153,312 +153,312 @@ class Trainer:
         print(f"Epochs        : {epochs}")
 
         print("=" * 60)
-# ======================================================
-# Train One Epoch
-# ======================================================
-
-def train_one_epoch(self):
-
-    self.model.train()
-
-    running_loss = 0.0
-
-    for batch in self.train_loader:
-
-        low = batch["low"].to(self.device)
-
-        high = batch["high"].to(self.device)
-
-        # ------------------------------------------
-        # Zero Grad
-        # ------------------------------------------
-
-        self.optimizer.zero_grad(set_to_none=True)
-
-        # ------------------------------------------
-        # Forward
-        # ------------------------------------------
-
-        model_output = self.model(low)
-
-        if isinstance(model_output, tuple):
-
-            prediction, difficulty = model_output
-
-        else:
-
-            prediction = model_output
-
-            difficulty = None
-
-        # ------------------------------------------
-        # Loss
-        # ------------------------------------------
-
-        losses = self.criterion(
-            prediction,
-            high,
-            difficulty,
-        )
-
-        total_loss = losses["total_loss"]
-
-        # ------------------------------------------
-        # Backpropagation
-        # ------------------------------------------
-
-        total_loss.backward()
-
-        # ------------------------------------------
-        # Gradient Clipping
-        # ------------------------------------------
-
-        torch.nn.utils.clip_grad_norm_(
-            self.model.parameters(),
-            max_norm=1.0,
-        )
-
-        # ------------------------------------------
-        # Optimizer Step
-        # ------------------------------------------
-
-        self.optimizer.step()
-
-        running_loss += total_loss.item()
-
-    average_loss = running_loss / max(
-        1,
-        len(self.train_loader),
-    )
-
-    return average_loss
-
-
-# ======================================================
-# Validation
-# ======================================================
-
-@torch.no_grad()
-def validate(self):
-
-    self.model.eval()
-
-    running_loss = 0.0
-
-    psnr_scores = []
-
-    ssim_scores = []
-
-    for batch in self.val_loader:
-
-        low = batch["low"].to(self.device)
-
-        high = batch["high"].to(self.device)
-
-        # ------------------------------------------
-        # Forward
-        # ------------------------------------------
-
-        model_output = self.model(low)
-
-        if isinstance(model_output, tuple):
-
-            prediction, difficulty = model_output
-
-        else:
-
-            prediction = model_output
-
-            difficulty = None
-
-        # ------------------------------------------
-        # Loss
-        # ------------------------------------------
-
-        losses = self.criterion(
-            prediction,
-            high,
-            difficulty,
-        )
-
-        running_loss += losses["total_loss"].item()
-
-        # ------------------------------------------
-        # Metrics
-        # ------------------------------------------
-
-        metrics = self.metrics.compute(
-            prediction,
-            high,
-        )
-
-        psnr_scores.append(
-            metrics["psnr"]
-        )
-
-        ssim_scores.append(
-            metrics["ssim"]
-        )
-
-    average_loss = running_loss / max(
-        1,
-        len(self.val_loader),
-    )
-
-    average_psnr = (
-        sum(psnr_scores)
-        / max(1, len(psnr_scores))
-    )
-
-    average_ssim = (
-        sum(ssim_scores)
-        / max(1, len(ssim_scores))
-    )
-
-    return (
-        average_loss,
-        average_psnr,
-        average_ssim,
-    )
     # ======================================================
-# Epoch
-# ======================================================
-
-def fit_one_epoch(
-    self,
-    epoch,
-    total_epochs,
-):
-
-    # ------------------------------------------
-    # Train
-    # ------------------------------------------
-
-    train_loss = self.train_one_epoch()
-
-    # ------------------------------------------
+    # Train One Epoch
+    # ======================================================
+    
+        def train_one_epoch(self):
+    
+        self.model.train()
+    
+        running_loss = 0.0
+    
+        for batch in self.train_loader:
+    
+            low = batch["low"].to(self.device)
+    
+            high = batch["high"].to(self.device)
+    
+            # ------------------------------------------
+            # Zero Grad
+            # ------------------------------------------
+    
+            self.optimizer.zero_grad(set_to_none=True)
+    
+            # ------------------------------------------
+            # Forward
+            # ------------------------------------------
+    
+            model_output = self.model(low)
+    
+            if isinstance(model_output, tuple):
+    
+                prediction, difficulty = model_output
+    
+            else:
+    
+                prediction = model_output
+    
+                difficulty = None
+    
+            # ------------------------------------------
+            # Loss
+            # ------------------------------------------
+    
+            losses = self.criterion(
+                prediction,
+                high,
+                difficulty,
+            )
+    
+            total_loss = losses["total_loss"]
+    
+            # ------------------------------------------
+            # Backpropagation
+            # ------------------------------------------
+    
+            total_loss.backward()
+    
+            # ------------------------------------------
+            # Gradient Clipping
+            # ------------------------------------------
+    
+            torch.nn.utils.clip_grad_norm_(
+                self.model.parameters(),
+                max_norm=1.0,
+            )
+    
+            # ------------------------------------------
+            # Optimizer Step
+            # ------------------------------------------
+    
+            self.optimizer.step()
+    
+            running_loss += total_loss.item()
+    
+        average_loss = running_loss / max(
+            1,
+            len(self.train_loader),
+        )
+    
+        return average_loss
+    
+    
+    # ======================================================
     # Validation
-    # ------------------------------------------
-
-    val_loss, psnr, ssim = self.validate()
-
-    # ------------------------------------------
-    # Scheduler Step
-    # ------------------------------------------
-
-    self.scheduler.step()
-
-    current_lr = self.optimizer.param_groups[0]["lr"]
-
-    # ------------------------------------------
-    # Best Model
-    # ------------------------------------------
-
-    is_best = val_loss < self.best_loss
-
-    os.makedirs(
-        "checkpoints",
-        exist_ok=True,
-    )
-
-    if is_best:
-
-        self.best_loss = val_loss
-
+    # ======================================================
+    
+    @torch.no_grad()
+    def validate(self):
+    
+        self.model.eval()
+    
+        running_loss = 0.0
+    
+        psnr_scores = []
+    
+        ssim_scores = []
+    
+        for batch in self.val_loader:
+    
+            low = batch["low"].to(self.device)
+    
+            high = batch["high"].to(self.device)
+    
+            # ------------------------------------------
+            # Forward
+            # ------------------------------------------
+    
+            model_output = self.model(low)
+    
+            if isinstance(model_output, tuple):
+    
+                prediction, difficulty = model_output
+    
+            else:
+    
+                prediction = model_output
+    
+                difficulty = None
+    
+            # ------------------------------------------
+            # Loss
+            # ------------------------------------------
+    
+            losses = self.criterion(
+                prediction,
+                high,
+                difficulty,
+            )
+    
+            running_loss += losses["total_loss"].item()
+    
+            # ------------------------------------------
+            # Metrics
+            # ------------------------------------------
+    
+            metrics = self.metrics.compute(
+                prediction,
+                high,
+            )
+    
+            psnr_scores.append(
+                metrics["psnr"]
+            )
+    
+            ssim_scores.append(
+                metrics["ssim"]
+            )
+    
+        average_loss = running_loss / max(
+            1,
+            len(self.val_loader),
+        )
+    
+        average_psnr = (
+            sum(psnr_scores)
+            / max(1, len(psnr_scores))
+        )
+    
+        average_ssim = (
+            sum(ssim_scores)
+            / max(1, len(ssim_scores))
+        )
+    
+        return (
+            average_loss,
+            average_psnr,
+            average_ssim,
+        )
+        # ======================================================
+    # Epoch
+    # ======================================================
+    
+    def fit_one_epoch(
+        self,
+        epoch,
+        total_epochs,
+    ):
+    
+        # ------------------------------------------
+        # Train
+        # ------------------------------------------
+    
+        train_loss = self.train_one_epoch()
+    
+        # ------------------------------------------
+        # Validation
+        # ------------------------------------------
+    
+        val_loss, psnr, ssim = self.validate()
+    
+        # ------------------------------------------
+        # Scheduler Step
+        # ------------------------------------------
+    
+        self.scheduler.step()
+    
+        current_lr = self.optimizer.param_groups[0]["lr"]
+    
+        # ------------------------------------------
+        # Best Model
+        # ------------------------------------------
+    
+        is_best = val_loss < self.best_loss
+    
+        os.makedirs(
+            "checkpoints",
+            exist_ok=True,
+        )
+    
+        if is_best:
+    
+            self.best_loss = val_loss
+    
+            save_checkpoint(
+                model=self.model,
+                optimizer=self.optimizer,
+                scheduler=self.scheduler,
+                epoch=epoch,
+                loss=val_loss,
+                filepath="checkpoints/best_model.pth",
+            )
+    
+        # ------------------------------------------
+        # Always Save Latest
+        # ------------------------------------------
+    
         save_checkpoint(
             model=self.model,
             optimizer=self.optimizer,
             scheduler=self.scheduler,
             epoch=epoch,
             loss=val_loss,
-            filepath="checkpoints/best_model.pth",
+            filepath="checkpoints/latest_checkpoint.pth",
         )
-
-    # ------------------------------------------
-    # Always Save Latest
-    # ------------------------------------------
-
-    save_checkpoint(
-        model=self.model,
-        optimizer=self.optimizer,
-        scheduler=self.scheduler,
-        epoch=epoch,
-        loss=val_loss,
-        filepath="checkpoints/latest_checkpoint.pth",
-    )
-
-    # ------------------------------------------
-    # Console Output
-    # ------------------------------------------
-
-    print("\n" + "=" * 65)
-    print(f"Epoch [{epoch}/{total_epochs}]")
-    print("=" * 65)
-
-    print(f"Train Loss : {train_loss:.6f}")
-    print(f"Val Loss   : {val_loss:.6f}")
-
-    print(f"PSNR       : {psnr:.4f}")
-    print(f"SSIM       : {ssim:.4f}")
-
-    print(f"LR         : {current_lr:.8f}")
-
-    print(f"Best Model : {'YES' if is_best else 'NO'}")
-
-    print("=" * 65)
-
-    # ------------------------------------------
-    # Logger
-    # ------------------------------------------
-
-    self.logger.log(
-
-        epoch=epoch,
-
-        train_loss=train_loss,
-
-        val_loss=val_loss,
-
-        psnr=psnr,
-
-        ssim=ssim,
-
-        lr=current_lr,
-
-    )
-
-    return train_loss, val_loss
-
-
-# ======================================================
-# Full Training Loop
-# ======================================================
-
-def fit(
-    self,
-    epochs,
-    start_epoch=1,
-):
-
-    print()
-    print("=" * 65)
-    print("Starting DGAL-Net Training")
-    print("=" * 65)
-
-    for epoch in range(
-        start_epoch,
-        epochs + 1,
-    ):
-
-        self.fit_one_epoch(
-
+    
+        # ------------------------------------------
+        # Console Output
+        # ------------------------------------------
+    
+        print("\n" + "=" * 65)
+        print(f"Epoch [{epoch}/{total_epochs}]")
+        print("=" * 65)
+    
+        print(f"Train Loss : {train_loss:.6f}")
+        print(f"Val Loss   : {val_loss:.6f}")
+    
+        print(f"PSNR       : {psnr:.4f}")
+        print(f"SSIM       : {ssim:.4f}")
+    
+        print(f"LR         : {current_lr:.8f}")
+    
+        print(f"Best Model : {'YES' if is_best else 'NO'}")
+    
+        print("=" * 65)
+    
+        # ------------------------------------------
+        # Logger
+        # ------------------------------------------
+    
+        self.logger.log(
+    
             epoch=epoch,
-
-            total_epochs=epochs,
-
+    
+            train_loss=train_loss,
+    
+            val_loss=val_loss,
+    
+            psnr=psnr,
+    
+            ssim=ssim,
+    
+            lr=current_lr,
+    
         )
-
-    print()
-    print("=" * 65)
-    print("Training Completed Successfully")
-    print("=" * 65)
+    
+        return train_loss, val_loss
+    
+    
+    # ======================================================
+    # Full Training Loop
+    # ======================================================
+    
+    def fit(
+        self,
+        epochs,
+        start_epoch=1,
+    ):
+    
+        print()
+        print("=" * 65)
+        print("Starting DGAL-Net Training")
+        print("=" * 65)
+    
+        for epoch in range(
+            start_epoch,
+            epochs + 1,
+        ):
+    
+            self.fit_one_epoch(
+    
+                epoch=epoch,
+    
+                total_epochs=epochs,
+    
+            )
+    
+        print()
+        print("=" * 65)
+        print("Training Completed Successfully")
+        print("=" * 65)
