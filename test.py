@@ -1,6 +1,6 @@
 """
 ==========================================================
-DGAL-Net
+DGAL-Net v2
 Testing Script
 ==========================================================
 """
@@ -12,12 +12,16 @@ from tqdm import tqdm
 
 from configs.config import config
 from datasets.dataloader import get_val_loader
-from models.baseline.baseline_net import BaselineNet
+from models.dgal.dgal_net import DGALNet
 from utils.metrics import ImageMetrics
 
 
 def load_model(checkpoint_path, device):
-    model = BaselineNet().to(device)
+    """
+    Load trained DGAL-Net model.
+    """
+
+    model = DGALNet().to(device)
 
     checkpoint = torch.load(
         checkpoint_path,
@@ -26,8 +30,10 @@ def load_model(checkpoint_path, device):
 
     if "model_state_dict" in checkpoint:
         model.load_state_dict(checkpoint["model_state_dict"])
+
     elif "state_dict" in checkpoint:
         model.load_state_dict(checkpoint["state_dict"])
+
     else:
         model.load_state_dict(checkpoint)
 
@@ -39,7 +45,7 @@ def load_model(checkpoint_path, device):
 def main():
 
     print("=" * 60)
-    print("DGAL-Net Testing")
+    print("DGAL-Net v2 Testing")
     print("=" * 60)
 
     device = config.DEVICE
@@ -67,7 +73,23 @@ def main():
             high = batch["high"].to(device)
             name = batch["name"][0]
 
-            prediction = model(low)
+            # --------------------------------------
+            # Forward
+            # --------------------------------------
+
+            output = model(low)
+
+            if isinstance(output, tuple):
+
+                prediction = output[0]
+
+            else:
+
+                prediction = output
+
+            # --------------------------------------
+            # Metrics
+            # --------------------------------------
 
             result = metrics.compute(
                 prediction,
@@ -77,6 +99,10 @@ def main():
             total_psnr += result["psnr"]
             total_ssim += result["ssim"]
             count += 1
+
+            # --------------------------------------
+            # Save Output
+            # --------------------------------------
 
             save_image(
                 prediction.clamp(0, 1),
