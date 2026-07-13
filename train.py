@@ -1,11 +1,10 @@
 """
 ==========================================================
-DGAL-Net
+DGAL-Net v2
 Training Script
 ==========================================================
 """
 
-import os
 import random
 import numpy as np
 import torch
@@ -17,12 +16,15 @@ from datasets.dataloader import (
     get_val_loader,
 )
 
-from models.baseline.baseline_net import BaselineNet
+# DGAL Network
+from models.dgal.dgal_net import DGALNet
 
 from trainer.trainer import Trainer
 
-from utils.checkpoint import load_checkpoint
 
+# ==========================================================
+# Seed
+# ==========================================================
 
 def set_seed(seed):
 
@@ -34,13 +36,21 @@ def set_seed(seed):
 
     torch.cuda.manual_seed_all(seed)
 
+    torch.backends.cudnn.deterministic = True
+
+    torch.backends.cudnn.benchmark = False
+
+
+# ==========================================================
+# Main
+# ==========================================================
 
 def main():
 
-    print("=" * 60)
-    print("DGAL-Net")
-    print("Baseline Training")
-    print("=" * 60)
+    print("=" * 70)
+    print("DGAL-Net v2")
+    print("Difficulty Guided Adaptive Low-Light Enhancement")
+    print("=" * 70)
 
     # --------------------------------------------------
     # Seed
@@ -58,16 +68,16 @@ def main():
 
     val_loader = get_val_loader()
 
-    print("Train Batches :", len(train_loader))
-    print("Validation Batches :", len(val_loader))
+    print(f"Train Batches      : {len(train_loader)}")
+    print(f"Validation Batches : {len(val_loader)}")
 
     # --------------------------------------------------
     # Model
     # --------------------------------------------------
 
-    print("\nBuilding Network...")
+    print("\nBuilding DGAL-Net...")
 
-    model = BaselineNet()
+    model = DGALNet()
 
     total_params = sum(
         p.numel()
@@ -88,49 +98,39 @@ def main():
     # --------------------------------------------------
 
     trainer = Trainer(
+
         model=model,
+
         train_loader=train_loader,
+
         val_loader=val_loader,
+
         device=config.DEVICE,
+
         lr=config.LR,
+
+        epochs=config.EPOCHS,
+
     )
-
-    # --------------------------------------------------
-    # Resume Training
-    # --------------------------------------------------
-
-    start_epoch = 1
-
-    checkpoint_path = "checkpoints/latest_checkpoint.pth"
-
-    if os.path.exists(checkpoint_path):
-
-        print("\nFound previous checkpoint.")
-
-        start_epoch = load_checkpoint(
-            filepath=checkpoint_path,
-            model=trainer.model,
-            optimizer=trainer.optimizer,
-            scheduler=trainer.scheduler,
-            device=config.DEVICE,
-        ) + 1
-
-        print(f"Resuming Training from Epoch {start_epoch}")
-
-    else:
-
-        print("\nNo checkpoint found.")
-        print("Starting Fresh Training.")
 
     # --------------------------------------------------
     # Training
     # --------------------------------------------------
 
     trainer.fit(
+
         epochs=config.EPOCHS,
-        start_epoch=start_epoch,
+
+        start_epoch=trainer.start_epoch,
+
     )
 
+    print("\nTraining Finished Successfully.")
+
+
+# ==========================================================
+# Run
+# ==========================================================
 
 if __name__ == "__main__":
 
